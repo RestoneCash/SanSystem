@@ -1,8 +1,10 @@
 package com.restonecash.sansystem.config;
 
 import com.restonecash.sansystem.api.config.DefaultConfig;
+import com.restonecash.sansystem.util.EntityCategory;
+import com.restonecash.sansystem.util.EntityClassificationHelper;
+import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
@@ -11,11 +13,15 @@ import java.util.function.Supplier;
 
 public class AttributeConfig
 {
-    // 定义配置规范（spec）和配置实例（instance）
-    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static final AttributeConfigParameters DEFAULT_CONFIG = new AttributeConfigParameters(null, () -> 0,  () -> 0, () ->0, () -> 150, () -> 0,  () -> true);
-    public static final ForgeConfigSpec SPEC;
     public static final AttributeConfig INSTANCE;
+    public static final ForgeConfigSpec SPEC;
+
+    static {
+        Pair<AttributeConfig, ForgeConfigSpec> pair =
+                new ForgeConfigSpec.Builder().configure(AttributeConfig::new);
+        INSTANCE = pair.getLeft();
+        SPEC = pair.getRight();
+    }
 
     // 玩家属性
     public final ForgeConfigSpec.DoubleValue playerPollution;
@@ -87,26 +93,25 @@ public class AttributeConfig
     public final ForgeConfigSpec.DoubleValue otherMaxSan;
     public final ForgeConfigSpec.BooleanValue otherIfSanKill;
 
+    //覆盖配置
+    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overridePollution;
+    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMentalRecover;
+    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMentalResilience;
+    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMaxSan;
+    public final ForgeConfigSpec.ConfigValue<Map<String, Boolean>> overrideIfSanKill;
+
 
     //https://forge.gemwire.uk/wiki/Configs
     // 存储所有独立配置：key=ID，value=单条参数
     private static final Map<String, AttributeConfigParameters> ATTRIBUTE_CONFIGS = new HashMap<>();
 
 
-    static {
-        final Pair<AttributeConfig, ForgeConfigSpec> pair = new ForgeConfigSpec.Builder().configure(AttributeConfig::new);
-        SPEC = pair.getRight();
-        INSTANCE = pair.getLeft();
-    }
-
-    // 个别实体的覆盖值（键为实体注册名，如 "minecraft:zombie"）
-    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> entityOverrides;
-
 
     public AttributeConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("san属性配置");
         builder.push("attribute_values");
 
+        builder.push("player");
         playerPollution = builder
                 .comment("玩家污染值")
                 .defineInRange("playerPollution", 0.0, 0.0, 100000.0);
@@ -281,13 +286,126 @@ public class AttributeConfig
 
         builder.push("entity_overrides");
 
-        entityOverrides = builder
-                .comment("为特定实体单独指定基础值（会覆盖分类值）",
-                        "格式：\"注册名\": 数值，例如 \"minecraft:zombie\": 12.0")
-                .define("overrides", new HashMap<>());
-
+        overridePollution = builder
+                .comment("覆盖指定实体的污染值", "格式: \"注册名\": 数值")
+                .define("pollution", new HashMap<>());
+        overrideMentalRecover = builder
+                .comment("覆盖指定实体的精神恢复")
+                .define("mentalRecover", new HashMap<>());
+        overrideMentalResilience = builder
+                .comment("覆盖指定实体的精神韧性")
+                .define("mentalResilience", new HashMap<>());
+        overrideMaxSan = builder
+                .comment("覆盖指定实体的最大SAN值")
+                .define("maxSan", new HashMap<>());
+        overrideIfSanKill = builder
+                .comment("覆盖指定实体的SAN归零是否死亡")
+                .define("ifSanKill", new HashMap<>());
         builder.pop();
     }
+
+    // ================== 修改点 6：核心方法，返回完整的属性包（支持覆盖） ==================
+    public AttributeValues getAttributes(EntityType<?> type) {
+        // 获取实体注册名
+        String key = ForgeRegistries.ENTITY_TYPES.getKey(type).toString();
+
+        // 先尝试从覆盖 Map 中取值，若没有则使用分类默认值
+        double pollution = getOverrideOrFallback(key, overridePollution.get(), getCategoryPollution(type));
+        double mentalRecover = getOverrideOrFallback(key, overrideMentalRecover.get(), getCategoryMentalRecover(type));
+        double mentalResilience = getOverrideOrFallback(key, overrideMentalResilience.get(), getCategoryMentalResilience(type));
+        double maxSan = getOverrideOrFallback(key, overrideMaxSan.get(), getCategoryMaxSan(type));
+        boolean ifSanKill = overrideIfSanKill.get().containsKey(key)
+                ? overrideIfSanKill.get().get(key)
+                : getCategoryIfSanKill(type);
+
+        return new AttributeValues(pollution, mentalRecover, mentalResilience, maxSan, ifSanKill);
+    }
+
+    // 辅助方法：从覆盖Map取值，若无则返回默认值
+    private double getOverrideOrFallback(String key, Map<String, Double> overrideMap, double defaultValue) {
+        return overrideMap.containsKey(key) ? overrideMap.get(key) : defaultValue;
+    }
+
+    // ================== 修改点 7：分类默认值获取方法（替代原来不可用的 switch） ==================
+    private EntityCategory getCategory(EntityType<?> type) {
+        return EntityClassificationHelper.getCategory(type);
+    }
+
+    private double getCategoryPollution(EntityType<?> type) {
+        switch (getCategory(type)) {
+            case PLAYER:       return playerPollution.get();
+            case WEAK:         return weakPollution.get();
+            case FRIENDLY:     return friendlyPollution.get();
+            case NEUTRAL:      return neutralPollution.get();
+            case COMMONMOBS:  return commonMobsPollution.get();
+            case STRONGMOBS:  return strongMobsPollution.get();
+            case ENDERDRAGON:  return enderdragonPollution.get();
+            case WITHER:       return witherPollution.get();
+            case WARDEN:       return wardenPollution.get();
+            default:           return otherPollution.get();
+        }
+    }
+
+    private double getCategoryMentalRecover(EntityType<?> type) {
+        switch (getCategory(type)) {
+            case PLAYER:       return playerMentalRecover.get();
+            case WEAK:         return weakMentalRecover.get();
+            case FRIENDLY:     return friendlyMentalRecover.get();
+            case NEUTRAL:      return neutralMentalRecover.get();
+            case COMMONMOBS:  return commonMobsMentalRecover.get();
+            case STRONGMOBS:  return strongMobsMentalRecover.get();
+            case ENDERDRAGON:  return enderdragonMentalRecover.get();
+            case WITHER:       return witherMentalRecover.get();
+            case WARDEN:       return wardenMentalRecover.get();
+            default:           return otherMentalRecover.get();
+        }
+    }
+
+    private double getCategoryMentalResilience(EntityType<?> type) {
+        switch (getCategory(type)) {
+            case PLAYER:       return playerMentalResilience.get();
+            case WEAK:         return weakMentalResilience.get();
+            case FRIENDLY:     return friendlyMentalResilience.get();
+            case NEUTRAL:      return neutralMentalResilience.get();
+            case COMMONMOBS:  return commonMobsMentalResilience.get();
+            case STRONGMOBS:  return strongMobsMentalResilience.get();
+            case ENDERDRAGON:  return enderdragonMentalResilience.get();
+            case WITHER:       return witherMentalResilience.get();
+            case WARDEN:       return wardenMentalResilience.get();
+            default:           return otherMentalResilience.get();
+        }
+    }
+
+    private double getCategoryMaxSan(EntityType<?> type) {
+        switch (getCategory(type)) {
+            case PLAYER:       return playerMaxSan.get();
+            case WEAK:         return weakMaxSan.get();
+            case FRIENDLY:     return friendlyMaxSan.get();
+            case NEUTRAL:      return neutralMaxSan.get();
+            case COMMONMOBS:  return commonMobsMaxSan.get();
+            case STRONGMOBS:  return strongMobsMaxSan.get();
+            case ENDERDRAGON:  return enderdragonMaxSan.get();
+            case WITHER:       return witherMaxSan.get();
+            case WARDEN:       return wardenMaxSan.get();
+            default:           return otherMaxSan.get();
+        }
+    }
+
+    private boolean getCategoryIfSanKill(EntityType<?> type) {
+        switch (getCategory(type)) {
+            case PLAYER:       return playerIfSanKill.get();
+            case WEAK:         return weakIfSanKill.get();
+            case FRIENDLY:     return friendlyIfSanKill.get();
+            case NEUTRAL:      return neutralIfSanKill.get();
+            case COMMONMOBS:  return commonMobsIfSanKill.get();
+            case STRONGMOBS:  return strongMobsIfSanKill.get();
+            case ENDERDRAGON:  return enderdragonIfSanKill.get();
+            case WITHER:       return witherIfSanKill.get();
+            case WARDEN:       return wardenIfSanKill.get();
+            default:           return otherIfSanKill.get();
+        }
+    }
+
 
     public static class AttributeConfigParameters {
 
@@ -338,4 +456,5 @@ public class AttributeConfig
             return IFSANKILL.get();
         }
     }
+
 }
