@@ -21,7 +21,7 @@ public class EntityClassificationHelper {
                 ||type.equals(EntityType.FOX)
                 ||type.equals(EntityType.CAT)
                 ||type.equals(EntityType.OCELOT)){
-            return EntityCategory.WEAKFRIENDLY;
+            return EntityCategory.WEAK;
         }
 
         else if(type.getCategory() == MobCategory.CREATURE

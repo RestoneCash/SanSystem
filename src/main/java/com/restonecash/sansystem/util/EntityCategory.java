@@ -3,7 +3,7 @@ package com.restonecash.sansystem.util;
 public enum EntityCategory
 {
     PLAYER,         //玩家
-    WEAKFRIENDLY,   // 弱小的友好生物（鱼、鸟、蝙蝠等）
+    WEAK,           // 弱小生物（鱼、鸟、蝙蝠等）
     FRIENDLY,       // 友好生物（牛、羊、村民等）
     NEUTRAL,        // 中立生物（铁傀儡）
     COMMONMOBS,     // 普通怪物（僵尸，骷髅，苦力怕，女巫，普通掠夺者等）
