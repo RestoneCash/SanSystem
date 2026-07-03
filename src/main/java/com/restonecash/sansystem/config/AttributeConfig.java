@@ -2,6 +2,7 @@ package com.restonecash.sansystem.config;
 
 import com.restonecash.sansystem.api.config.DefaultConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
@@ -10,13 +11,21 @@ import java.util.function.Supplier;
 
 public class AttributeConfig
 {
-    // 1. 定义配置规范（spec）和配置实例（instance）
+    // 定义配置规范（spec）和配置实例（instance）
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static final ForgeConfigSpec SPEC;
     public static final AttributeConfigParameters DEFAULT_CONFIG = new AttributeConfigParameters(null, () -> 0,  () -> 0, () ->0, () -> 150, () -> 0,  () -> true);
+    public static final ForgeConfigSpec SPEC;
+    public static final AttributeConfig INSTANCE;
 
-    // 每个分类的基础值（带范围限制）
-    public final ForgeConfigSpec.DoubleValue playerBase;
+    // 玩家属性
+    public final ForgeConfigSpec.DoubleValue playerPollution;
+    public final ForgeConfigSpec.DoubleValue playerMentalRecover;
+    public final ForgeConfigSpec.DoubleValue playerMentalResilence;
+    public final ForgeConfigSpec.DoubleValue playerMaxSan;
+    public final ForgeConfigSpec.BooleanValue playerIfSanKill;
+
+
+
     public final ForgeConfigSpec.DoubleValue weakFriendlyBase;
     public final ForgeConfigSpec.DoubleValue friendlyBase;
     public final ForgeConfigSpec.DoubleValue neutralBase;
@@ -28,41 +37,45 @@ public class AttributeConfig
     public final ForgeConfigSpec.DoubleValue otherBase;
 
     //https://forge.gemwire.uk/wiki/Configs
+    // 存储所有独立配置：key=ID，value=单条参数
     private static final Map<String, AttributeConfigParameters> ATTRIBUTE_CONFIGS = new HashMap<>();
 
-    static {
 
+    static {
+        final Pair<AttributeConfig, ForgeConfigSpec> pair = new ForgeConfigSpec.Builder().configure(AttributeConfig::new);
+        SPEC = pair.getRight();
+        INSTANCE = pair.getLeft();
     }
 
     // 个别实体的覆盖值（键为实体注册名，如 "minecraft:zombie"）
     public final ForgeConfigSpec.ConfigValue<Map<String, Double>> entityOverrides;
 
 
-
     public AttributeConfig(ForgeConfigSpec.Builder builder) {
+        builder.comment("san属性配置");
         builder.push("attribute_values");
 
-        friendlyBase = builder
-                .comment("友好生物的基础属性值")
-                .defineInRange("friendly", 2.0, 0.0, 100.0);
 
-        neutralBase = builder
-                .comment("中立生物的基础属性值")
-                .defineInRange("neutral", 5.0, 0.0, 100.0);
+        playerPollution = builder
+                .comment("玩家污染值")
+                .defineInRange("playerPollution", 0.0, 0.0, 100000.0);
+        playerMentalRecover=builder
+                .comment("玩家精神恢复")
+                .defineInRange("playerMentalRecover", 1.0, 0.0, 100000.0);
+        playerMentalResilence=builder
+                .comment("玩家精神韧性")
+                .defineInRange("playerMentalResilence", 3.0, 0.0, 100000.0);
+        playerMaxSan=builder
+                .comment("玩家最大san值")
+                .defineInRange("playerMaxSan", 150.0, 0.0, 100000.0);
+        playerIfSanKill=builder
+                .comment("玩家san归零时是否死亡")
+                .define("playerIfSanKill", true);
 
-        hostileBase = builder
-                .comment("敌对生物的基础属性值")
-                .defineInRange("hostile", 10.0, 0.0, 100.0);
 
-        bossBase = builder
-                .comment("BOSS生物的基础属性值")
-                .defineInRange("boss", 25.0, 0.0, 100.0);
-
-        otherBase = builder
-                .comment("其他生物的基础属性值")
-                .defineInRange("other", 1.0, 0.0, 100.0);
 
         builder.pop();
+
         builder.push("entity_overrides");
 
         entityOverrides = builder
