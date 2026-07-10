@@ -5,6 +5,7 @@ import com.restonecash.sansystem.util.EntityCategory;
 import com.restonecash.sansystem.util.EntityClassificationHelper;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
@@ -23,73 +24,74 @@ public class AttributeConfig
         SPEC = pair.getRight();
     }
 
+
     // 玩家属性
     public final ForgeConfigSpec.DoubleValue playerPollution;
     public final ForgeConfigSpec.DoubleValue playerMentalRecover;
-    public final ForgeConfigSpec.DoubleValue playerMentalResilence;
+    public final ForgeConfigSpec.DoubleValue playerMentalResilience;
     public final ForgeConfigSpec.DoubleValue playerMaxSan;
     public final ForgeConfigSpec.BooleanValue playerIfSanKill;
 
     //弱小生物
     public final ForgeConfigSpec.DoubleValue weakPollution;
     public final ForgeConfigSpec.DoubleValue weakMentalRecover;
-    public final ForgeConfigSpec.DoubleValue weakMentalResilence;
+    public final ForgeConfigSpec.DoubleValue weakMentalResilience;
     public final ForgeConfigSpec.DoubleValue weakMaxSan;
     public final ForgeConfigSpec.BooleanValue weakIfSanKill;
 
     //友好生物
     public final ForgeConfigSpec.DoubleValue friendlyPollution;
     public final ForgeConfigSpec.DoubleValue friendlyMentalRecover;
-    public final ForgeConfigSpec.DoubleValue friendlyMentalResilence;
+    public final ForgeConfigSpec.DoubleValue friendlyMentalResilience;
     public final ForgeConfigSpec.DoubleValue friendlyMaxSan;
     public final ForgeConfigSpec.BooleanValue friendlyIfSanKill;
 
     //中立生物
     public final ForgeConfigSpec.DoubleValue neutralPollution;
     public final ForgeConfigSpec.DoubleValue neutralMentalRecover;
-    public final ForgeConfigSpec.DoubleValue neutralMentalResilence;
+    public final ForgeConfigSpec.DoubleValue neutralMentalResilience;
     public final ForgeConfigSpec.DoubleValue neutralMaxSan;
     public final ForgeConfigSpec.BooleanValue neutralIfSanKill;
 
     //普通怪物
     public final ForgeConfigSpec.DoubleValue commonMobsPollution;
     public final ForgeConfigSpec.DoubleValue commonMobsMentalRecover;
-    public final ForgeConfigSpec.DoubleValue commonMobsMentalResilence;
+    public final ForgeConfigSpec.DoubleValue commonMobsMentalResilience;
     public final ForgeConfigSpec.DoubleValue commonMobsMaxSan;
     public final ForgeConfigSpec.BooleanValue commonMobsIfSanKill;
 
     //强力怪物
     public final ForgeConfigSpec.DoubleValue strongMobsPollution;
     public final ForgeConfigSpec.DoubleValue strongMobsMentalRecover;
-    public final ForgeConfigSpec.DoubleValue strongMobsMentalResilence;
+    public final ForgeConfigSpec.DoubleValue strongMobsMentalResilience;
     public final ForgeConfigSpec.DoubleValue strongMobsMaxSan;
     public final ForgeConfigSpec.BooleanValue strongMobsIfSanKill;
 
     //末影龙
     public final ForgeConfigSpec.DoubleValue enderdragonPollution;
     public final ForgeConfigSpec.DoubleValue enderdragonMentalRecover;
-    public final ForgeConfigSpec.DoubleValue enderdragonMentalResilence;
+    public final ForgeConfigSpec.DoubleValue enderdragonMentalResilience;
     public final ForgeConfigSpec.DoubleValue enderdragonMaxSan;
     public final ForgeConfigSpec.BooleanValue enderdragonIfSanKill;
 
     //凋灵
     public final ForgeConfigSpec.DoubleValue witherPollution;
     public final ForgeConfigSpec.DoubleValue witherMentalRecover;
-    public final ForgeConfigSpec.DoubleValue witherMentalResilence;
+    public final ForgeConfigSpec.DoubleValue witherMentalResilience;
     public final ForgeConfigSpec.DoubleValue witherMaxSan;
     public final ForgeConfigSpec.BooleanValue witherIfSanKill;
 
     //监守者
     public final ForgeConfigSpec.DoubleValue wardenPollution;
     public final ForgeConfigSpec.DoubleValue wardenMentalRecover;
-    public final ForgeConfigSpec.DoubleValue wardenMentalResilence;
+    public final ForgeConfigSpec.DoubleValue wardenMentalResilience;
     public final ForgeConfigSpec.DoubleValue wardenMaxSan;
     public final ForgeConfigSpec.BooleanValue wardenIfSanKill;
 
     //其他
     public final ForgeConfigSpec.DoubleValue otherPollution;
     public final ForgeConfigSpec.DoubleValue otherMentalRecover;
-    public final ForgeConfigSpec.DoubleValue otherMentalResilence;
+    public final ForgeConfigSpec.DoubleValue otherMentalResilience;
     public final ForgeConfigSpec.DoubleValue otherMaxSan;
     public final ForgeConfigSpec.BooleanValue otherIfSanKill;
 
@@ -99,11 +101,6 @@ public class AttributeConfig
     public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMentalResilience;
     public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMaxSan;
     public final ForgeConfigSpec.ConfigValue<Map<String, Boolean>> overrideIfSanKill;
-
-
-    //https://forge.gemwire.uk/wiki/Configs
-    // 存储所有独立配置：key=ID，value=单条参数
-    private static final Map<String, AttributeConfigParameters> ATTRIBUTE_CONFIGS = new HashMap<>();
 
 
 
@@ -118,9 +115,9 @@ public class AttributeConfig
         playerMentalRecover=builder
                 .comment("玩家精神恢复")
                 .defineInRange("playerMentalRecover", 1.0, 0.0, 100000.0);
-        playerMentalResilence=builder
+        playerMentalResilience =builder
                 .comment("玩家精神韧性")
-                .defineInRange("playerMentalResilence", 5.0, 0.0, 100000.0);
+                .defineInRange("playerMentalResilience", 5.0, 0.0, 100000.0);
         playerMaxSan=builder
                 .comment("玩家最大san值")
                 .defineInRange("playerMaxSan", 150.0, 0.0, 100000.0);
@@ -135,9 +132,9 @@ public class AttributeConfig
         weakMentalRecover=builder
                 .comment("弱小生物精神恢复")
                 .defineInRange("weakMentalRecover", 1.0, 0.0, 100000.0);
-        weakMentalResilence=builder
+        weakMentalResilience =builder
                 .comment("弱小生物精神韧性")
-                .defineInRange("weakMentalResilence", 2.0, 0.0, 100000.0);
+                .defineInRange("weakMentalResilience", 2.0, 0.0, 100000.0);
         weakMaxSan=builder
                 .comment("弱小生物最大san值")
                 .defineInRange("weakMaxSan", 50.0, 0.0, 100000.0);
@@ -152,9 +149,9 @@ public class AttributeConfig
         friendlyMentalRecover=builder
                 .comment("友好生物精神恢复")
                 .defineInRange("friendlyMentalRecover", 1.0, 0.0, 100000.0);
-        friendlyMentalResilence=builder
+        friendlyMentalResilience =builder
                 .comment("友好生物精神韧性")
-                .defineInRange("friendlyMentalResilence", 3.0, 0.0, 100000.0);
+                .defineInRange("friendlyMentalResilience", 3.0, 0.0, 100000.0);
         friendlyMaxSan=builder
                 .comment("友好生物最大san值")
                 .defineInRange("friendlyMaxSan", 100.0, 0.0, 100000.0);
@@ -169,9 +166,9 @@ public class AttributeConfig
         neutralMentalRecover=builder
                 .comment("中立生物精神恢复")
                 .defineInRange("neutralMentalRecover", 10.0, 0.0, 100000.0);
-        neutralMentalResilence=builder
+        neutralMentalResilience =builder
                 .comment("中立生物精神韧性")
-                .defineInRange("neutralMentalResilence", 20.0, 0.0, 100000.0);
+                .defineInRange("neutralMentalResilience", 20.0, 0.0, 100000.0);
         neutralMaxSan=builder
                 .comment("中立生物最大san值")
                 .defineInRange("neutralMaxSan", 300.0, 0.0, 100000.0);
@@ -186,9 +183,9 @@ public class AttributeConfig
         commonMobsMentalRecover=builder
                 .comment("普通怪物精神恢复")
                 .defineInRange("commonMobsMentalRecover", 5.0, 0.0, 100000.0);
-        commonMobsMentalResilence=builder
+        commonMobsMentalResilience =builder
                 .comment("普通怪物精神韧性")
-                .defineInRange("commonMobsMentalResilence", 10.0, 0.0, 100000.0);
+                .defineInRange("commonMobsMentalResilience", 10.0, 0.0, 100000.0);
         commonMobsMaxSan=builder
                 .comment("普通怪物最大san值")
                 .defineInRange("commonMobsMaxSan", 200.0, 0.0, 100000.0);
@@ -203,9 +200,9 @@ public class AttributeConfig
         strongMobsMentalRecover=builder
                 .comment("强力怪物精神恢复")
                 .defineInRange("strongMobsMentalRecover", 15.0, 0.0, 100000.0);
-        strongMobsMentalResilence=builder
+        strongMobsMentalResilience =builder
                 .comment("强力怪物精神韧性")
-                .defineInRange("strongMobsMentalResilence", 30.0, 0.0, 100000.0);
+                .defineInRange("strongMobsMentalResilience", 30.0, 0.0, 100000.0);
         strongMobsMaxSan=builder
                 .comment("强力怪物最大san值")
                 .defineInRange("strongMobsMaxSan", 500.0, 0.0, 100000.0);
@@ -220,9 +217,9 @@ public class AttributeConfig
         enderdragonMentalRecover=builder
                 .comment("末影龙精神恢复")
                 .defineInRange("enderdragonMentalRecover", 0.0, 0.0, 100000.0);
-        enderdragonMentalResilence=builder
+        enderdragonMentalResilience =builder
                 .comment("末影龙精神韧性")
-                .defineInRange("enderdragonMentalResilence", 50.0, 0.0, 100000.0);
+                .defineInRange("enderdragonMentalResilience", 50.0, 0.0, 100000.0);
         enderdragonMaxSan=builder
                 .comment("末影龙最大san值")
                 .defineInRange("enderdragonMaxSan", 2000.0, 0.0, 100000.0);
@@ -237,9 +234,9 @@ public class AttributeConfig
         witherMentalRecover=builder
                 .comment("凋灵精神恢复")
                 .defineInRange("witherMentalRecover", 0.0, 0.0, 100000.0);
-        witherMentalResilence=builder
+        witherMentalResilience =builder
                 .comment("凋灵精神韧性")
-                .defineInRange("witherMentalResilence", 80.0, 0.0, 100000.0);
+                .defineInRange("witherMentalResilience", 80.0, 0.0, 100000.0);
         witherMaxSan=builder
                 .comment("凋灵最大san值")
                 .defineInRange("witherMaxSan", 1000.0, 0.0, 100000.0);
@@ -254,9 +251,9 @@ public class AttributeConfig
         wardenMentalRecover=builder
                 .comment("监守者精神恢复")
                 .defineInRange("wardenMentalRecover", 0.0, 0.0, 100000.0);
-        wardenMentalResilence=builder
+        wardenMentalResilience =builder
                 .comment("监守者精神韧性")
-                .defineInRange("wardenMentalResilence", 10.0, 0.0, 100000.0);
+                .defineInRange("wardenMentalResilience", 10.0, 0.0, 100000.0);
         wardenMaxSan=builder
                 .comment("监守者最大san值")
                 .defineInRange("wardenMaxSan", 100.0, 0.0, 100000.0);
@@ -271,9 +268,9 @@ public class AttributeConfig
         otherMentalRecover=builder
                 .comment("其他精神恢复")
                 .defineInRange("otherMentalRecover", 0.0, 0.0, 100000.0);
-        otherMentalResilence=builder
+        otherMentalResilience =builder
                 .comment("其他精神韧性")
-                .defineInRange("otherMentalResilence", 0.0, 0.0, 100000.0);
+                .defineInRange("otherMentalResilience", 0.0, 0.0, 100000.0);
         otherMaxSan=builder
                 .comment("其他最大san值")
                 .defineInRange("otherMaxSan", 100.0, 0.0, 100000.0);
@@ -304,7 +301,31 @@ public class AttributeConfig
         builder.pop();
     }
 
-    // ================== 修改点 6：核心方法，返回完整的属性包（支持覆盖） ==================
+    /**
+     * 定义属性值容器
+     */
+    public static class AttributeValues {
+        public final double pollution;
+        public final double mentalRecover;
+        public final double mentalResilience;
+        public final double maxSan;
+        public final boolean ifSanKill;
+
+        public AttributeValues(double pollution, double mentalRecover,
+                               double mentalResilience, double maxSan, boolean ifSanKill) {
+            this.pollution = pollution;
+            this.mentalRecover = mentalRecover;
+            this.mentalResilience = mentalResilience;
+            this.maxSan = maxSan;
+            this.ifSanKill = ifSanKill;
+        }
+    }
+
+    /**
+     * 返回完整的属性包（支持覆盖）
+     * @param type
+     * @return
+     */
     public AttributeValues getAttributes(EntityType<?> type) {
         // 获取实体注册名
         String key = ForgeRegistries.ENTITY_TYPES.getKey(type).toString();
@@ -326,7 +347,7 @@ public class AttributeConfig
         return overrideMap.containsKey(key) ? overrideMap.get(key) : defaultValue;
     }
 
-    // ================== 修改点 7：分类默认值获取方法（替代原来不可用的 switch） ==================
+    // 分类默认值获取方法
     private EntityCategory getCategory(EntityType<?> type) {
         return EntityClassificationHelper.getCategory(type);
     }
@@ -403,57 +424,6 @@ public class AttributeConfig
             case WITHER:       return witherIfSanKill.get();
             case WARDEN:       return wardenIfSanKill.get();
             default:           return otherIfSanKill.get();
-        }
-    }
-
-
-    public static class AttributeConfigParameters {
-
-        final Supplier<Integer> POLLUTION;
-        final Supplier<Integer> MENTALRECOVER;
-        final Supplier<Integer> MENTALRESILIENCE;
-        final Supplier<Integer> MAXSAN;
-        final Supplier<Integer> MINSAN;
-        final Supplier<Boolean> IFSANKILL;
-
-        AttributeConfigParameters(
-                DefaultConfig defaultConfig,
-                Supplier<Integer> POLLUTION,
-                Supplier<Integer> MENTALRECOVER,
-                Supplier<Integer> MENTALRESILIENCE,
-                Supplier<Integer> MAXSAN,
-                Supplier<Integer> MINSAN,
-                Supplier<Boolean> IFSANKILL) {
-            this.POLLUTION=POLLUTION;
-            this.MENTALRECOVER=MENTALRECOVER;
-            this.MENTALRESILIENCE=MENTALRESILIENCE;
-            this.MAXSAN=MAXSAN;
-            this.MINSAN=MINSAN;
-            this.IFSANKILL=IFSANKILL;
-        }
-
-        public int pollution() {
-            return POLLUTION.get();
-        }
-
-        public int mentalRecover() {
-            return MENTALRECOVER.get();
-        }
-
-        public int mentalReisilience() {
-            return MENTALRESILIENCE.get();
-        }
-
-        public int maxSan() {
-            return MAXSAN.get();
-        }
-
-        public int minSan() {
-            return MINSAN.get();
-        }
-
-        public boolean ifSankill() {
-            return IFSANKILL.get();
         }
     }
 
