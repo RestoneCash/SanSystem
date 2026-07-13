@@ -38,14 +38,14 @@ public class AttributeRegistry
 
     /**
      * 实体属性修改订阅事件
-     * 游戏初始化所有实体类型时自动触发，为每一种实体预注册本模组全部魔法属性
+     * 游戏初始化所有实体类型时自动触发，为每一种实体预注册本模组全部san属性
      */
     @SubscribeEvent
     public static void modifyEntityAttributes(EntityAttributeModificationEvent e)
     {
         // 遍历游戏内全部实体类型（玩家、僵尸、BOSS、动物等所有EntityType）
         e.getTypes().forEach(entity ->
-                // 遍历本类所有已注册的魔法属性，逐个挂载到当前实体上
+                // 遍历本类所有已注册的san属性，逐个挂载到当前实体上
                 ATTRIBUTES.getEntries().forEach(attribute ->e.add(entity, attribute.get())));
     }
 }

@@ -41,13 +41,13 @@ public class SanityDamageHandler
 
     private float getPollution(LivingEntity entity)
     {
-        var attr = entity.getAttribute(AttributeRegistry.POLLUTION);
+        var attr = entity.getAttribute(AttributeRegistry.POLLUTION.get());
         return attr != null ? (float) attr.getValue() : 0.0f;
     }
 
     private float getResilience(LivingEntity entity)
     {
-        var attr = entity.getAttribute(AttributeRegistry.MENTAL_RESILIENCE);
+        var attr = entity.getAttribute(AttributeRegistry.MENTAL_RESILIENCE.get());
         return attr != null ? (float) attr.getValue() : 0.0f;
     }
 }

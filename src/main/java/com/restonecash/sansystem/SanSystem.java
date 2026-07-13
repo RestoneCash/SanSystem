@@ -1,6 +1,7 @@
 package com.restonecash.sansystem;
 
 import com.mojang.logging.LogUtils;
+import com.restonecash.sansystem.api.registry.AttributeRegistry;
 import com.restonecash.sansystem.api.san.ISanity;
 import com.restonecash.sansystem.capability.SanityCapability;
 import com.restonecash.sansystem.config.ClientConfig;
@@ -46,6 +47,10 @@ public class SanSystem
 
         // 注册实体（需要 modEventBus）
         ModEntities.ENTITIES.register(modEventBus);
+
+        // 注册自定义属性
+        AttributeRegistry.register(modEventBus);
+
 
         // 绑定模组生命周期各类回调方法
         modEventBus.addListener(this::commonSetup);

@@ -3,6 +3,7 @@ package com.restonecash.sansystem.event.handler;
 import com.restonecash.sansystem.api.events.AttributeEventHandler;
 import com.restonecash.sansystem.capability.SanityCapability;
 import com.restonecash.sansystem.capability.SanityStorage;
+import com.restonecash.sansystem.config.AttributeConfig;
 import com.restonecash.sansystem.config.ServerConfig;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,7 +32,7 @@ public class CapabilityEventHandler
 
         livingEntity.getCapability(SanityCapability.SANITY).ifPresent(sanity -> {
             if (!sanity.getCore().isInitialized()) {
-                float maxSanity = ServerConfig.getEntityDefaults(livingEntity.getType()).maxSanity();
+                float maxSanity = (float) AttributeConfig.INSTANCE.getAttributes(livingEntity.getType()).maxSan;
                 sanity.getCore().setMaxSanity(maxSanity);
                 sanity.getCore().setSanity(maxSanity);
                 sanity.getCore().setInitialized();

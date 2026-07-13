@@ -337,7 +337,7 @@ public class SanityCentralHandler
 
     private float getMentalRecovery(LivingEntity entity)
     {
-        var attr = entity.getAttribute(AttributeRegistry.MENTAL_RECOVERY);
+        var attr = entity.getAttribute(AttributeRegistry.MENTAL_RECOVERY.get());
         return attr != null ? (float) attr.getValue() : 0.0f;
     }
 
