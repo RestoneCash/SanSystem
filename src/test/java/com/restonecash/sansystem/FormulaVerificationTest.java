@@ -20,8 +20,8 @@ public class FormulaVerificationTest
     {
         SanityCapability.register();
         sanity = new SanityCapability();
-        sanity.setMaxSanity(100.0f);
-        sanity.setSanity(100.0f);
+        sanity.getCore().setMaxSanity(100.0f);
+        sanity.getCore().setSanity(100.0f);
     }
 
     @Test
@@ -49,10 +49,10 @@ public class FormulaVerificationTest
         float expectedSanity = 100.0f - expectedDrop;
 
         // When
-        sanity.decreaseSanity(damage, pollution, resilience);
+        sanity.getCore().decreaseSanity(damage, pollution, resilience);
 
         // Then
-        assertEquals(expectedSanity, sanity.getSanity(), 0.1f,
+        assertEquals(expectedSanity, sanity.getCore().getSanity(), 0.1f,
             "Sanity should drop according to formula: damage × pollution ÷ 4 × reduction");
     }
 
@@ -73,12 +73,12 @@ public class FormulaVerificationTest
         float expectedDrop = (damage * pollution / 4.0f) * (1.0f - resilience / (pollution + resilience));
         float expectedSanity = 100.0f - expectedDrop;
 
-        sanity.decreaseSanity(damage, pollution, resilience);
+        sanity.getCore().decreaseSanity(damage, pollution, resilience);
 
         // High resilience should significantly reduce sanity drop
-        assertTrue(sanity.getSanity() > 95.0f,
+        assertTrue(sanity.getCore().getSanity() > 95.0f,
             "High resilience (50) vs low pollution (5) should result in minimal sanity drop");
-        assertEquals(expectedSanity, sanity.getSanity(), 0.5f);
+        assertEquals(expectedSanity, sanity.getCore().getSanity(), 0.5f);
     }
 
     @Test
@@ -98,12 +98,12 @@ public class FormulaVerificationTest
         float expectedDrop = (damage * pollution / 4.0f) * (1.0f - resilience / (pollution + resilience));
         float expectedSanity = 100.0f - expectedDrop;
 
-        sanity.decreaseSanity(damage, pollution, resilience);
+        sanity.getCore().decreaseSanity(damage, pollution, resilience);
 
         // High pollution should cause significant sanity drop
-        assertTrue(sanity.getSanity() < 40.0f,
+        assertTrue(sanity.getCore().getSanity() < 40.0f,
             "High pollution (50) vs low resilience (1) should cause significant sanity drop");
-        assertEquals(expectedSanity, sanity.getSanity(), 1.0f);
+        assertEquals(expectedSanity, sanity.getCore().getSanity(), 1.0f);
     }
 
     @Test
@@ -120,9 +120,9 @@ public class FormulaVerificationTest
         // baseDrop = 8 × 20 ÷ 4 = 40
         // actualDrop = 40 × 0.5 = 20
 
-        sanity.decreaseSanity(damage, pollution, resilience);
+        sanity.getCore().decreaseSanity(damage, pollution, resilience);
 
-        assertEquals(80.0f, sanity.getSanity(), 0.01f,
+        assertEquals(80.0f, sanity.getCore().getSanity(), 0.01f,
             "Equal pollution and resilience should result in 50% reduction");
     }
 }

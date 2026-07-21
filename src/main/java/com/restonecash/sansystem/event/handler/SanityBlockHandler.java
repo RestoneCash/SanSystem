@@ -42,7 +42,7 @@ public class SanityBlockHandler
      * 检测玩家脚下方块，判断是否触发理智流失
      */
     @SubscribeEvent
-    public void onLivingTick(LivingEvent.LivingTickEvent event)
+    public static void onLivingTick(LivingEvent.LivingTickEvent event)
     {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
@@ -62,7 +62,7 @@ public class SanityBlockHandler
      * 清理该玩家的冷却记录，避免内存泄漏
      */
     @SubscribeEvent
-    public void onPlayerLeave(EntityLeaveLevelEvent event)
+    public static void onPlayerLeave(EntityLeaveLevelEvent event)
     {
         if (!(event.getEntity() instanceof Player player)) return;
         drainTracker.removePlayer(player.getUUID());
@@ -72,7 +72,7 @@ public class SanityBlockHandler
      * 检查方块的理智流失
      * 检测方块配置，调用跟踪器判断是否执行流失
      */
-    private void checkBlockDrain(Player player, Block block, UUID playerId, long currentTick)
+    private static void checkBlockDrain(Player player, Block block, UUID playerId, long currentTick)
     {
         ServerConfig.SanityDrainConfig drainConfig = ServerConfig.getBlockSanityDrain(block);
 

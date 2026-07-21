@@ -22,8 +22,8 @@ public class CraftingLogicTest
     {
         SanityCapability.register();
         sanity = new SanityCapability();
-        sanity.setMaxSanity(100.0f);
-        sanity.setSanity(100.0f);
+        sanity.getCore().setMaxSanity(100.0f);
+        sanity.getCore().setSanity(100.0f);
 
         // Manually populate config for testing (simulates config loading)
         ServerConfig.craftingSanityRequirements.clear();
@@ -58,11 +58,11 @@ public class CraftingLogicTest
     void testCraftingDecision_PlayerHasSufficientSanity()
     {
         // Given: Player has 80 sanity, item requires 50
-        sanity.setSanity(80.0f);
+        sanity.getCore().setSanity(80.0f);
         float requiredSanity = 50.0f;
 
         // When: Check if player can craft
-        boolean canCraft = sanity.getSanity() >= requiredSanity;
+        boolean canCraft = sanity.getCore().getSanity() >= requiredSanity;
 
         // Then: Player should be able to craft
         assertTrue(canCraft, "Player with 80 sanity should be able to craft item requiring 50");
@@ -72,11 +72,11 @@ public class CraftingLogicTest
     void testCraftingDecision_PlayerHasInsufficientSanity()
     {
         // Given: Player has 40 sanity, item requires 50
-        sanity.setSanity(40.0f);
+        sanity.getCore().setSanity(40.0f);
         float requiredSanity = 50.0f;
 
         // When: Check if player can craft
-        boolean canCraft = sanity.getSanity() >= requiredSanity;
+        boolean canCraft = sanity.getCore().getSanity() >= requiredSanity;
 
         // Then: Player should NOT be able to craft
         assertFalse(canCraft, "Player with 40 sanity should NOT be able to craft item requiring 50");
@@ -97,10 +97,10 @@ public class CraftingLogicTest
         float enderPearlRequirement = ServerConfig.getCraftingSanityRequirement(Items.ENDER_PEARL);
         float expectedTotal = enderPearlRequirement * 1; // 1 ender pearl
 
-        sanity.setSanity(25.0f);
+        sanity.getCore().setSanity(25.0f);
 
         // When: Check if player can craft
-        boolean canCraft = sanity.getSanity() >= expectedTotal;
+        boolean canCraft = sanity.getCore().getSanity() >= expectedTotal;
 
         // Then: Player with 25 sanity should NOT be able to craft (requires 30)
         assertFalse(canCraft, "Player with 25 sanity should NOT be able to craft Ender Eye requiring 30");
@@ -110,11 +110,11 @@ public class CraftingLogicTest
     void testCraftingDecision_EdgeCase_ExactSanity()
     {
         // Given: Player has EXACTLY the required sanity
-        sanity.setSanity(50.0f);
+        sanity.getCore().setSanity(50.0f);
         float requiredSanity = 50.0f;
 
         // When: Check if player can craft
-        boolean canCraft = sanity.getSanity() >= requiredSanity;
+        boolean canCraft = sanity.getCore().getSanity() >= requiredSanity;
 
         // Then: Player should be able to craft (boundary case)
         assertTrue(canCraft, "Player with exactly 50 sanity should be able to craft item requiring 50");
@@ -124,11 +124,11 @@ public class CraftingLogicTest
     void testCraftingDecision_EdgeCase_OnePointBelow()
     {
         // Given: Player has one point below required sanity
-        sanity.setSanity(49.0f);
+        sanity.getCore().setSanity(49.0f);
         float requiredSanity = 50.0f;
 
         // When: Check if player can craft
-        boolean canCraft = sanity.getSanity() >= requiredSanity;
+        boolean canCraft = sanity.getCore().getSanity() >= requiredSanity;
 
         // Then: Player should NOT be able to craft
         assertFalse(canCraft, "Player with 49 sanity should NOT be able to craft item requiring 50");
@@ -138,11 +138,11 @@ public class CraftingLogicTest
     void testCraftingDecision_NoSanityRequirement()
     {
         // Given: Item has no sanity requirement configured
-        sanity.setSanity(10.0f); // Very low sanity
+        sanity.getCore().setSanity(10.0f); // Very low sanity
         float requiredSanity = 0.0f;
 
         // When: Check if player can craft
-        boolean canCraft = sanity.getSanity() >= requiredSanity;
+        boolean canCraft = sanity.getCore().getSanity() >= requiredSanity;
 
         // Then: Player should be able to craft (no requirement)
         assertTrue(canCraft, "Player should be able to craft items with no sanity requirement");

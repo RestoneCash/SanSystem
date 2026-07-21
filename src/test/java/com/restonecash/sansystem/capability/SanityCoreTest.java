@@ -1,6 +1,7 @@
 package com.restonecash.sansystem.capability;
 
 import com.restonecash.sansystem.api.san.SanityCore;
+import com.restonecash.sansystem.capability.SanityTrackerImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,7 @@ public class SanityCoreTest
     @BeforeEach
     void setUp()
     {
-        core = new SanityCoreImpl();
+        core = new SanityCoreImpl(new SanityTrackerImpl());
         core.setMaxSanity(100.0f);
         core.setSanity(100.0f);
     }

@@ -1,6 +1,8 @@
 package com.restonecash.sansystem.capability;
 
 import com.restonecash.sansystem.api.san.SanityCore;
+import com.restonecash.sansystem.api.san.SanityTracker;
+import com.restonecash.sansystem.config.ServerConfig;
 
 /**
  * 理智核心模块实现
@@ -9,16 +11,16 @@ import com.restonecash.sansystem.api.san.SanityCore;
  */
 public class SanityCoreImpl implements SanityCore
 {
-    // ==================== 持久化字段（NBT 保存）====================
     private float sanity = 100.0f;
     private float maxSanity = 100.0f;
     private boolean initialized = false;
 
-    // ==================== 基础恢复常量 ====================
+    private final SanityTracker tracker;
 
-    private static final float BASE_RECOVERY_PER_TICK = 0.01f;
-
-    // ==================== 核心值操作实现 ====================
+    public SanityCoreImpl(SanityTracker tracker)
+    {
+        this.tracker = tracker;
+    }
 
     @Override
     public float getSanity()
@@ -29,7 +31,9 @@ public class SanityCoreImpl implements SanityCore
     @Override
     public void setSanity(float value)
     {
+        float old = this.sanity;
         this.sanity = Math.max(0.0f, Math.min(value, this.maxSanity));
+        if (old != this.sanity) this.tracker.markChanged();
     }
 
     @Override
@@ -41,15 +45,19 @@ public class SanityCoreImpl implements SanityCore
     @Override
     public void setMaxSanity(float value)
     {
+        float old = this.maxSanity;
         this.maxSanity = Math.max(0.0f, value);
         this.sanity = Math.max(0.0f, Math.min(this.sanity, this.maxSanity));
+        if (old != this.maxSanity) this.tracker.markChanged();
     }
 
     @Override
     public void addSanity(float amount)
     {
         if (amount <= 0) return;
+        float old = this.sanity;
         setSanity(this.sanity + amount);
+        if (old != this.sanity) this.tracker.markChanged();
     }
 
     @Override
@@ -58,24 +66,29 @@ public class SanityCoreImpl implements SanityCore
         if (baseAmount <= 0) return;
 
         float denominator = attackerPollution + defenderResilience;
+        float actualDrop;
         if (denominator <= 0) {
-            setSanity(this.sanity - baseAmount * attackerPollution / 4);
-            return;
+            actualDrop = baseAmount * attackerPollution / 4;
+        } else {
+            float reduction = 1.0f - defenderResilience / denominator;
+            actualDrop = baseAmount * attackerPollution / 4 * reduction;
         }
 
-        float reduction = 1.0f - defenderResilience / denominator;
-        float actualDrop = baseAmount * attackerPollution / 4 * reduction;
+        if (actualDrop <= 0) return;
+        float old = this.sanity;
         setSanity(this.sanity - actualDrop);
+        if (old != this.sanity) this.tracker.markChanged();
     }
 
     @Override
     public void tickRecovery(float mentalRecovery)
     {
-        float recovery = BASE_RECOVERY_PER_TICK * (1.0f + mentalRecovery);
+        float recovery = ServerConfig.baseRecoveryPerTick * (1.0f + mentalRecovery);
+        if (recovery <= 0) return;
+        float old = this.sanity;
         addSanity(recovery);
+        if (old != this.sanity) this.tracker.markChanged();
     }
-
-    // ==================== 初始化状态实现 ====================
 
     @Override
     public boolean isInitialized()

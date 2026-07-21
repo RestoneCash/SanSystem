@@ -25,22 +25,22 @@ public class InitializationFlagTest
     @Test
     void testInitialState_NotInitialized()
     {
-        assertFalse(sanity.isInitialized(), "New SanityCapability should not be initialized");
+        assertFalse(sanity.getCore().isInitialized(), "New SanityCapability should not be initialized");
     }
 
     @Test
     void testSetInitialized_MarksAsInitialized()
     {
-        sanity.setInitialized();
-        assertTrue(sanity.isInitialized(), "After setInitialized(), should be initialized");
+        sanity.getCore().setInitialized();
+        assertTrue(sanity.getCore().isInitialized(), "After setInitialized(), should be initialized");
     }
 
     @Test
     void testSetInitialized_PersistedInNBT()
     {
-        sanity.setInitialized();
-        sanity.setMaxSanity(100.0f);
-        sanity.setSanity(80.0f);
+        sanity.getCore().setInitialized();
+        sanity.getCore().setMaxSanity(100.0f);
+        sanity.getCore().setSanity(80.0f);
 
         CompoundTag tag = new CompoundTag();
         sanity.saveNBT(tag);
@@ -59,8 +59,8 @@ public class InitializationFlagTest
 
         sanity.loadNBT(tag);
 
-        assertTrue(sanity.isInitialized(), "After loading NBT with Initialized=true, should be initialized");
-        assertEquals(50.0f, sanity.getSanity(), 0.01f);
+        assertTrue(sanity.getCore().isInitialized(), "After loading NBT with Initialized=true, should be initialized");
+        assertEquals(50.0f, sanity.getCore().getSanity(), 0.01f);
     }
 
     @Test
@@ -72,29 +72,29 @@ public class InitializationFlagTest
 
         sanity.loadNBT(tag);
 
-        assertFalse(sanity.isInitialized(), "If NBT lacks Initialized flag, should default to false");
+        assertFalse(sanity.getCore().isInitialized(), "If NBT lacks Initialized flag, should default to false");
     }
 
     @Test
     void testInitializationScenario_FirstJoinOnly()
     {
         // Simulate first join: set default values
-        assertFalse(sanity.isInitialized());
-        sanity.setMaxSanity(100.0f);
-        sanity.setSanity(100.0f);
-        sanity.setInitialized();
+        assertFalse(sanity.getCore().isInitialized());
+        sanity.getCore().setMaxSanity(100.0f);
+        sanity.getCore().setSanity(100.0f);
+        sanity.getCore().setInitialized();
 
-        assertTrue(sanity.isInitialized());
-        assertEquals(100.0f, sanity.getSanity(), 0.01f);
+        assertTrue(sanity.getCore().isInitialized());
+        assertEquals(100.0f, sanity.getCore().getSanity(), 0.01f);
 
         // Simulate later operations that reduce sanity
-        sanity.setSanity(50.0f);
-        assertEquals(50.0f, sanity.getSanity(), 0.01f);
+        sanity.getCore().setSanity(50.0f);
+        assertEquals(50.0f, sanity.getCore().getSanity(), 0.01f);
 
         // Simulate chunk reload: should NOT reset because initialized flag is true
-        if (!sanity.isInitialized()) {
-            sanity.setSanity(100.0f); // This should NOT happen
+        if (!sanity.getCore().isInitialized()) {
+            sanity.getCore().setSanity(100.0f); // This should NOT happen
         }
-        assertEquals(50.0f, sanity.getSanity(), 0.01f, "Sanity should NOT reset after chunk reload");
+        assertEquals(50.0f, sanity.getCore().getSanity(), 0.01f, "Sanity should NOT reset after chunk reload");
     }
 }

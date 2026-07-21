@@ -91,8 +91,8 @@ public class SanityDrainConfigTest
         float sanityPerDrain = config.sanityPerDrain();
 
         // Simulate one drain cycle
-        sanity.setSanity(sanity.getSanity() - sanityPerDrain);
-        assertEquals(99.0f, sanity.getSanity(), 0.01f, "Sanity should decrease by 1.0 after one drain cycle");
+        sanity.getCore().setSanity(sanity.getCore().getSanity() - sanityPerDrain);
+        assertEquals(99.0f, sanity.getCore().getSanity(), 0.01f, "Sanity should decrease by 1.0 after one drain cycle");
     }
 
     @Test
@@ -103,7 +103,7 @@ public class SanityDrainConfigTest
         assertNotNull(config);
 
         float sanityPerDrain = config.sanityPerDrain();
-        sanity.getCore().setSanity(sanity.getCore().etSanity() - sanityPerDrain);
+        sanity.getCore().setSanity(sanity.getCore().getSanity() - sanityPerDrain);
         assertEquals(99.0f, sanity.getCore().getSanity(), 0.01f, "Sanity should decrease by 1.0 after one drain cycle");
     }
 

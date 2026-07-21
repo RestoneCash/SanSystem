@@ -2,6 +2,7 @@ package com.restonecash.sansystem.effect;
 
 import com.restonecash.sansystem.api.san.ISanity;
 import com.restonecash.sansystem.capability.SanityCapability;
+import com.restonecash.sansystem.config.ServerConfig;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.EnumMap;
@@ -33,10 +34,11 @@ import java.util.Map;
  */
 public class EffectManager
 {
-    // 效果应用器映射（每个效果类型对应一个应用器）
+    @Deprecated
+    public static final int GRACE_PERIOD_TICKS = 100;
+
     private final Map<EffectType, EffectApplier> effectAppliers = new EnumMap<>(EffectType.class);
 
-    // 效果阈值映射（可配置，覆盖 EffectType 中的默认值）
     private final Map<EffectType, Float> thresholds = new EnumMap<>(EffectType.class);
 
     /**
@@ -104,6 +106,8 @@ public class EffectManager
      */
     public void update(Player player, long currentTick)
     {
+        if (player == null) return;
+
         player.getCapability(SanityCapability.SANITY).ifPresent(sanity -> {
             float sanityPercent = sanity.getCore().getMaxSanity() > 0
                 ? sanity.getCore().getSanity() / sanity.getCore().getMaxSanity()
@@ -147,9 +151,6 @@ public class EffectManager
 
         if (shouldApply)
         {
-            // 效果应该激活：计算动态强度，清除宽限期，应用效果
-            // 强度 = (阈值 - 当前San%) / 阈值
-            // 例如：阈值25%，San 20% → 强度 = 0.20；San 10% → 强度 = 0.60；San 0% → 强度 = 1.0
             float intensity = (threshold - sanityPercent) / threshold;
             intensity = Math.max(0.0f, Math.min(intensity, 1.0f));
 
@@ -159,13 +160,10 @@ public class EffectManager
         }
         else
         {
-            // 效果应该消退：启动宽限期渐变
             long gracePeriodStart = getGracePeriodStart(type, sanity);
             if (gracePeriodStart == 0)
             {
-                // 刚进入宽限期，记录开始时间
-                setGracePeriodStart(type, sanity, currentTick);
-                gracePeriodStart = currentTick;
+                return;
             }
 
             float fadeIntensity = calculateFadeIntensity(gracePeriodStart, currentTick);
@@ -173,13 +171,11 @@ public class EffectManager
 
             if (fadeIntensity <= 0.0f)
             {
-                // 效果完全消退：移除效果，重置状态
                 applier.remove(player);
                 resetEffectState(type, sanity);
             }
             else
             {
-                // 在宽限期内，保持效果但更新强度
                 applier.apply(player, fadeIntensity);
             }
         }
@@ -252,9 +248,8 @@ public class EffectManager
 
     /**
      * 计算宽限期内的渐变强度
-     * @return 0.0 ~ 1.0 之间的强度值
      */
-    private float calculateFadeIntensity(long gracePeriodStart, long currentTick)
+    public static float calculateFadeIntensity(long gracePeriodStart, long currentTick)
     {
         if (gracePeriodStart <= 0)
         {
@@ -262,11 +257,10 @@ public class EffectManager
         }
 
         long ticksSinceGraceStart = currentTick - gracePeriodStart;
-        int gracePeriodTicks = 100; // 宽限期 100 tick = 5 秒
 
-        if (ticksSinceGraceStart < gracePeriodTicks)
+        if (ticksSinceGraceStart < ServerConfig.gracePeriodTicks)
         {
-            return 1.0f - (float) ticksSinceGraceStart / gracePeriodTicks;
+            return 1.0f - (float) ticksSinceGraceStart / ServerConfig.gracePeriodTicks;
         }
         else
         {

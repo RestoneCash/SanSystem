@@ -1,6 +1,7 @@
 package com.restonecash.sansystem.entity;
 
 import com.restonecash.sansystem.capability.SanityCapability;
+import com.restonecash.sansystem.config.ServerConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -9,6 +10,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -35,8 +38,6 @@ public class ShadowEntity extends Monster
     private static final EntityDataAccessor<Boolean> AGGRESSIVE = SynchedEntityData.defineId(ShadowEntity.class, EntityDataSerializers.BOOLEAN);
 
     // 攻击前摇和瞬移冷却常量
-    private static final int ATTACK_WINDUP_TICKS = 16;
-    private static final int TELEPORT_COOLDOWN_TICKS = 600;
     private static final double MAX_FOLLOW_DISTANCE = 20.0;
     private static final double TELEPORT_DISTANCE = 30.0;
 
@@ -54,9 +55,9 @@ public class ShadowEntity extends Monster
     public static AttributeSupplier.Builder createAttributes()
     {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 1.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.5)
-                .add(Attributes.FOLLOW_RANGE, 30.0);
+                .add(Attributes.MAX_HEALTH, ServerConfig.shadowMaxHealth)
+                .add(Attributes.MOVEMENT_SPEED, ServerConfig.shadowMoveSpeed)
+                .add(Attributes.FOLLOW_RANGE, ServerConfig.shadowFollowRange);
     }
 
     // ==================== 影子注册表委托方法 ====================
@@ -134,13 +135,13 @@ public class ShadowEntity extends Monster
         if (!this.level().isClientSide)
         {
             checkTeleport();
-            checkDespawnCondition();
+            if (this.tickCount % 20 == 0) checkDespawnCondition();
         }
 
         if (this.getEntityData().get(ATTACKING))
         {
             attackWindup++;
-            if (attackWindup >= ATTACK_WINDUP_TICKS)
+            if (attackWindup >= ServerConfig.shadowAttackWindups)
             {
                 performAttack();
             }
@@ -160,7 +161,7 @@ public class ShadowEntity extends Monster
         if (target == null) return;
 
         long currentTick = level().getGameTime();
-        if (currentTick - lastTeleportTick < TELEPORT_COOLDOWN_TICKS) return;
+        if (currentTick - lastTeleportTick < ServerConfig.shadowTeleportCooldown) return;
 
         double distance = this.distanceTo(target);
         if (distance > TELEPORT_DISTANCE)
@@ -179,7 +180,7 @@ public class ShadowEntity extends Monster
         double y = target.getY();
         double z = target.getZ() + (random.nextDouble() - 0.5) * 4.0;
 
-        this.moveTo(x, y, z, this.getYRot(), this.getXRot());
+        this.teleportTo(x, y, z);
 
         if (level() instanceof ServerLevel serverLevel)
         {
@@ -190,8 +191,13 @@ public class ShadowEntity extends Monster
     /**
      * 检查是否应该消失（目标玩家不存在或 san 值恢复）
      */
+    private int despawnCheckTick = 0;
+
     private void checkDespawnCondition()
     {
+        despawnCheckTick++;
+        if (despawnCheckTick % 20 != 0) return;
+
         if (targetPlayerId == null)
         {
             this.discard();
@@ -207,7 +213,7 @@ public class ShadowEntity extends Monster
 
         target.getCapability(SanityCapability.SANITY).ifPresent(sanity -> {
             float sanPercent = sanity.getCore().getSanity() / sanity.getCore().getMaxSanity();
-            if (sanPercent >= 0.50f)
+            if (sanPercent >= ServerConfig.shadowDespawnSanThreshold)
             {
                 this.discard();
             }
@@ -230,12 +236,17 @@ public class ShadowEntity extends Monster
         {
             if (target instanceof Player player && player.getUUID().equals(targetPlayerId))
             {
-                target.hurt(this.damageSources().mobAttack(this), 2.0f);
+                target.hurt(this.damageSources().mobAttack(this), (float) ServerConfig.shadowAttackDamage);
 
                 player.getCapability(SanityCapability.SANITY).ifPresent(sanity -> {
                     int currentStacks = sanity.getEffects().getSlownessStacks();
                     sanity.getEffects().setSlownessStacks(currentStacks + 1);
                 });
+
+                int amplifier = Math.min(4, player.getCapability(SanityCapability.SANITY)
+                        .map(s -> s.getEffects().getSlownessStacks() - 1)
+                        .orElse(0));
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, amplifier, false, false, true));
             }
         }
 
@@ -341,10 +352,11 @@ public class ShadowEntity extends Monster
         super.readAdditionalSaveData(tag);
         if (tag.hasUUID("TargetPlayer"))
         {
-            this.targetPlayerId = tag.getUUID("TargetPlayer");
-            // 从 NBT 加载后重新注册影子
-            // 【重要】这是必要的，因为世界加载时实体需要重新注册到注册表
-            registerShadow(this.targetPlayerId, this);
+            UUID uuid = tag.getUUID("TargetPlayer");
+            this.targetPlayerId = uuid;
+            if (!getShadowsForPlayer(uuid).contains(this)) {
+                registerShadow(uuid, this);
+            }
         }
         this.entityData.set(AGGRESSIVE, tag.getBoolean("Aggressive"));
     }

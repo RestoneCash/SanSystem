@@ -4,10 +4,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 
-/**
- * 失明效果应用器
- * 实现 EffectApplier 接口，处理失明的应用和移除
- */
 public class BlindnessEffectApplier implements EffectApplier
 {
     @Override
@@ -19,21 +15,25 @@ public class BlindnessEffectApplier implements EffectApplier
     @Override
     public void apply(Player player, float intensity)
     {
-        if (!hasEffect(player))
-        {
-            player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 200, 0, false, false, true));
+        if (player == null) return;
+        if (intensity <= 0.0f) {
+            remove(player);
+            return;
         }
+        int amplifier = Math.min(4, (int) (intensity * 5));
+        player.removeEffect(MobEffects.BLINDNESS);
+        player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 200, amplifier, false, false, true));
     }
 
     @Override
     public void remove(Player player)
     {
-        player.removeEffect(MobEffects.BLINDNESS);
+        if (player != null) player.removeEffect(MobEffects.BLINDNESS);
     }
 
     @Override
     public boolean hasEffect(Player player)
     {
-        return player.hasEffect(MobEffects.BLINDNESS);
+        return player != null && player.hasEffect(MobEffects.BLINDNESS);
     }
 }

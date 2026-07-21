@@ -1,5 +1,6 @@
 package com.restonecash.sansystem.capability;
 
+import com.restonecash.sansystem.SanSystem;
 import com.restonecash.sansystem.api.san.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;
@@ -23,14 +24,23 @@ public class SanityCapability implements ISanity
 
     public static void register()
     {
-        SANITY = CapabilityManager.get(new CapabilityToken<>() {});
+        SANITY = CapabilityManager.get(new CapabilityToken<ISanity>() {});
     }
 
     // ==================== 子模块实例 ====================
 
-    private final SanityCore core = new SanityCoreImpl();
-    private final SanityEffects effects = new SanityEffectsImpl();
     private final SanityTracker sanityTracker = new SanityTrackerImpl();
+    private final SanityCore core = new SanityCoreImpl(this.sanityTracker);
+    private final SanityEffects effects = new SanityEffectsImpl(this.sanityTracker);
+    private boolean sessionInitDone = false;
+
+    public void markSessionInitDone() {
+        this.sessionInitDone = true;
+    }
+
+    public boolean isSessionInitDone() {
+        return this.sessionInitDone;
+    }
 
     // ==================== 子模块访问器 ====================
 
@@ -57,16 +67,15 @@ public class SanityCapability implements ISanity
     @Override
     public void saveNBT(CompoundTag tag)
     {
-        // 只保存核心模块的持久化字段
         tag.putFloat("Sanity", this.core.getSanity());
         tag.putFloat("MaxSanity", this.core.getMaxSanity());
         tag.putBoolean("Initialized", this.core.isInitialized());
-        // 运行时状态（effects）不持久化
     }
 
     @Override
     public void loadNBT(CompoundTag tag)
     {
+        if (sessionInitDone) return;
         if (tag.contains("Sanity")) this.core.setSanity(tag.getFloat("Sanity"));
         if (tag.contains("MaxSanity")) this.core.setMaxSanity(tag.getFloat("MaxSanity"));
         if (tag.contains("Initialized"))
@@ -76,7 +85,6 @@ public class SanityCapability implements ISanity
                 this.core.setInitialized();
             }
         }
-        // 运行时状态（effects）不加载
     }
 
 }

@@ -4,11 +4,11 @@ package com.restonecash.sansystem.effect;
  * 效果状态封装
  * 封装单个效果的强度和宽限期计时器
  *
- * 【设计说明】
- * 每个效果有独立的强度和宽限期计时器
- * 强度从 0.0 到 1.0，表示效果的强烈程度
- * 宽限期用于 San 值回升后效果的渐变淡出
+ * @deprecated EffectManager 直接使用 Capability 读写效果状态，
+ *             此类保留作为纯 Java 模型类和测试工具。
+ *             生产代码请使用 SanityEffects 接口。
  */
+@Deprecated
 public class EffectState
 {
     // 效果强度（0-1）

@@ -1,10 +1,11 @@
 package com.restonecash.sansystem.event.handler;
 
+import com.restonecash.sansystem.SanSystem;
 import com.restonecash.sansystem.api.registry.AttributeRegistry;
 import com.restonecash.sansystem.capability.SanityCapability;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
@@ -14,8 +15,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  */
 public class SanityDamageHandler
 {
+    private static boolean debugOnce = true;
+
     @SubscribeEvent
-    public void onLivingDamage(LivingDamageEvent event)
+    public void onLivingHurt(LivingHurtEvent event)
     {
         if (event.getEntity().level().isClientSide) return;
 
@@ -25,6 +28,12 @@ public class SanityDamageHandler
         final float attackerPollution;
         if (source.getEntity() instanceof LivingEntity attacker) {
             attackerPollution = getPollution(attacker);
+            if (debugOnce) {
+                debugOnce = false;
+                SanSystem.LOGGER.info("SanityDamage: attacker={} pollution={} attrExists={}",
+                    attacker.getClass().getSimpleName(), attackerPollution,
+                    attacker.getAttribute(AttributeRegistry.POLLUTION.get()) != null);
+            }
         } else {
             attackerPollution = 0.0f;
         }
@@ -35,7 +44,11 @@ public class SanityDamageHandler
         final float damage = event.getAmount();
 
         defender.getCapability(SanityCapability.SANITY).ifPresent(sanity -> {
+            float before = sanity.getCore().getSanity();
             sanity.getCore().decreaseSanity(damage, attackerPollution, defenderResilience);
+            float after = sanity.getCore().getSanity();
+            SanSystem.LOGGER.info("SanityDamage: {} dealt {} san damage. {} -> {}",
+                defender.getClass().getSimpleName(), before - after, before, after);
         });
     }
 

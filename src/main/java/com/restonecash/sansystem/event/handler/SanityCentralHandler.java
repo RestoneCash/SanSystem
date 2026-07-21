@@ -7,6 +7,7 @@ import com.restonecash.sansystem.capability.SanityCapability;
 import com.restonecash.sansystem.entity.ModEntities;
 import com.restonecash.sansystem.entity.ShadowEntity;
 import com.restonecash.sansystem.effect.EffectManager;
+import com.restonecash.sansystem.config.ServerConfig;
 import com.restonecash.sansystem.network.PacketHandler;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -35,51 +36,16 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = SanSystem.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SanityCentralHandler
 {
-    // ==================== 常量定义 ====================
-    private static final int GRACE_PERIOD_TICKS = 100;
-
-    // 效果阈值（配置参数，传递给 EffectManager）
-    private static final float NAUSEA_THRESHOLD = 0.25f;
-    private static final float BLINDNESS_THRESHOLD = 0.10f;
-    private static final float INPUT_INVERSION_THRESHOLD = 0.15f;
-    private static final float DEATH_THRESHOLD = 0.0f;
-
-    // 影子生成阈值
-    private static final float SHADOW_SPAWN_THRESHOLD_50 = 0.50f;
-    private static final float SHADOW_SPAWN_THRESHOLD_20 = 0.20f;
-
-    // 影子生成间隔
-    private static final int SPAWN_INTERVAL_LOW_SAN = 100;
-    private static final int SPAWN_INTERVAL_CRITICAL_SAN = 20;
-
-    // 影子数量上限
-    private static final int MAX_SHADOWS_LOW_SAN = 3;
-    private static final int MAX_SHADOWS_CRITICAL_SAN = 10;
-
-    // 恢复系统：安全区判定
-    private static final int PEACEFUL_THRESHOLD_TICKS = 600;
-
-    // 缓慢效果衰减间隔（200 tick = 10秒）
-    private static final int SLOWNESS_DECAY_INTERVAL = 200;
-
-    // ==================== 运行时状态追踪 ====================
     private static final java.util.Map<UUID, Long> lastSpawnTick = new java.util.concurrent.ConcurrentHashMap<>();
 
-    // ==================== 效果管理器（内部成员变量）====================
-    /**
-     * 效果管理器实例，负责所有效果的状态管理和应用逻辑
-     * 替代原有的 handleNauseaEffect、handleBlindnessEffect、handleInputInversion 方法
-     */
     private static final EffectManager effectManager = new EffectManager(
-        NAUSEA_THRESHOLD,
-        BLINDNESS_THRESHOLD,
-        INPUT_INVERSION_THRESHOLD
+        ServerConfig.nauseaThreshold,
+        ServerConfig.blindnessThreshold,
+        ServerConfig.inputInversionThreshold
     );
 
-    // ==================== 主事件处理 ====================
-
     @SubscribeEvent
-    public void onLivingTick(LivingEvent.LivingTickEvent event)
+    public static void onLivingTick(LivingEvent.LivingTickEvent event)
     {
         if (event.getEntity().level().isClientSide) return;
 
@@ -96,7 +62,7 @@ public class SanityCentralHandler
     }
 
     @SubscribeEvent
-    public void onPlayerLeave(EntityLeaveLevelEvent event)
+    public static void onPlayerLeave(EntityLeaveLevelEvent event)
     {
         if (!(event.getEntity() instanceof Player player)) return;
         UUID playerId = player.getUUID();
@@ -105,7 +71,7 @@ public class SanityCentralHandler
 
     // ==================== 玩家核心处理 ====================
 
-    private void handlePlayerTick(Player player)
+    private static void handlePlayerTick(Player player)
     {
         player.getCapability(SanityCapability.SANITY).ifPresent(sanity -> {
             float currentSan = sanity.getCore().getSanity();
@@ -146,7 +112,7 @@ public class SanityCentralHandler
      * 【委托说明】具体逻辑已下沉到 effectManager.update()
      * 包括：阈值检测、强度计算、宽限期渐变、状态同步到 Capability
      */
-    private void handleEffects(Player player, float sanPercent, ISanity sanity, long currentTick)
+    private static void handleEffects(Player player, float sanPercent, ISanity sanity, long currentTick)
     {
         // 调用效果管理器更新所有效果
         // 效果管理器会自动处理：
@@ -161,7 +127,7 @@ public class SanityCentralHandler
      * @return 0.0 ~ 1.0 之间的强度值
      * 【保留说明】此方法仍被 handleSlowness 使用，暂不删除
      */
-    private float calculateFadeIntensity(long gracePeriodStart, long currentTick)
+    private static float calculateFadeIntensity(long gracePeriodStart, long currentTick)
     {
         if (gracePeriodStart <= 0)
         {
@@ -170,9 +136,9 @@ public class SanityCentralHandler
 
         long ticksSinceGraceStart = currentTick - gracePeriodStart;
 
-        if (ticksSinceGraceStart < GRACE_PERIOD_TICKS)
+        if (ticksSinceGraceStart < ServerConfig.gracePeriodTicks)
         {
-            return 1.0f - (float) ticksSinceGraceStart / GRACE_PERIOD_TICKS;
+            return 1.0f - (float) ticksSinceGraceStart / ServerConfig.gracePeriodTicks;
         }
         else
         {
@@ -186,14 +152,14 @@ public class SanityCentralHandler
      * 处理缓慢效果，根据 capability 中的 stacks 应用/移除，并实现缓慢衰减
      * 【注意】此方法使用栈衰减机制，不依赖 EffectManager
      */
-    private void handleSlowness(Player player, ISanity sanity, long currentTick)
+    private static void handleSlowness(Player player, ISanity sanity, long currentTick)
     {
         int stacks = sanity.getEffects().getSlownessStacks();
 
         if (stacks > 0)
         {
             long lastDecay = sanity.getEffects().getLastSlownessDecayTick();
-            if (currentTick - lastDecay >= SLOWNESS_DECAY_INTERVAL)
+            if (currentTick - lastDecay >= ServerConfig.slownessDecayInterval)
             {
                 sanity.getEffects().setSlownessStacks(stacks - 1);
                 sanity.getEffects().setLastSlownessDecayTick(currentTick);
@@ -225,7 +191,7 @@ public class SanityCentralHandler
      * 【委托说明】具体逻辑已下沉到 effectManager.update()
      * 包括：阈值检测、状态切换、宽限期渐变、同步到 Capability
      */
-    private void handleInputInversion(Player player, float sanPercent, ISanity sanity, long currentTick)
+    private static void handleInputInversion(Player player, float sanPercent, ISanity sanity, long currentTick)
     {
         // 调用效果管理器更新输入反转效果
         // effectManager.update() 已包含所有效果的处理，此处无需额外调用
@@ -252,10 +218,10 @@ public class SanityCentralHandler
     /**
      * 处理影子实体生成
      */
-    private void handleShadowSpawn(Player player, float sanPercent, long currentTick)
+    private static void handleShadowSpawn(Player player, float sanPercent, long currentTick)
     {
         // san >= 50% 时不生成影子
-        if (sanPercent >= SHADOW_SPAWN_THRESHOLD_50) return;
+        if (sanPercent >= ServerConfig.shadowSpawnThreshold) return;
 
         UUID playerId = player.getUUID();
         Set<ShadowEntity> existingShadows = ShadowEntity.getShadowsForPlayer(playerId);
@@ -263,10 +229,10 @@ public class SanityCentralHandler
 
         long lastSpawn = lastSpawnTick.getOrDefault(playerId, 0L);
 
-        if (sanPercent < SHADOW_SPAWN_THRESHOLD_20)
+        if (sanPercent < ServerConfig.shadowSpawnCriticalThreshold)
         {
             // 危急状态：san < 20%
-            if (currentTick - lastSpawn >= SPAWN_INTERVAL_CRITICAL_SAN && currentCount < MAX_SHADOWS_CRITICAL_SAN)
+            if (currentTick - lastSpawn >= ServerConfig.shadowSpawnCriticalInterval && currentCount < ServerConfig.shadowMaxCriticalCount)
             {
                 spawnShadowEntity(player, true);
                 lastSpawnTick.put(playerId, currentTick);
@@ -275,8 +241,8 @@ public class SanityCentralHandler
         else
         {
             // 低理智状态：20% <= san < 50%
-            if (currentTick - lastSpawn >= SPAWN_INTERVAL_LOW_SAN
-                && currentCount < MAX_SHADOWS_LOW_SAN
+            if (currentTick - lastSpawn >= ServerConfig.shadowSpawnInterval
+                && currentCount < ServerConfig.shadowMaxCount
                 && player.getRandom().nextFloat() < 0.3f)
             {
                 spawnShadowEntity(player, false);
@@ -285,7 +251,7 @@ public class SanityCentralHandler
         }
     }
 
-    private void spawnShadowEntity(Player player, boolean aggressive)
+    private static void spawnShadowEntity(Player player, boolean aggressive)
     {
         Level level = player.level();
         if (!(level instanceof ServerLevel serverLevel)) return;
@@ -309,7 +275,7 @@ public class SanityCentralHandler
     /**
      * 处理理智恢复，在安全区时恢复
      */
-    private void handleRecovery(LivingEntity entity)
+    private static void handleRecovery(LivingEntity entity)
     {
         if (!isInSafeZone(entity)) return;
 
@@ -319,23 +285,21 @@ public class SanityCentralHandler
         });
     }
 
-    private boolean isInSafeZone(LivingEntity entity)
+    private static boolean isInSafeZone(LivingEntity entity)
     {
+        if (entity.hurtTime > 0) return false;
+
         long lastHurtTime = entity.getLastHurtByMobTimestamp();
         long now = entity.level().getGameTime();
 
-        boolean peacefulSinceMob = now - lastHurtTime > PEACEFUL_THRESHOLD_TICKS;
+        if (lastHurtTime > 0 && now - lastHurtTime <= ServerConfig.peacefulTicks) return false;
 
-        boolean hasAggro = false;
-        if (entity instanceof Mob mob)
-        {
-            hasAggro = mob.getTarget() != null;
-        }
+        if (entity instanceof Mob mob && mob.getTarget() != null) return false;
 
-        return peacefulSinceMob && !hasAggro;
+        return true;
     }
 
-    private float getMentalRecovery(LivingEntity entity)
+    private static float getMentalRecovery(LivingEntity entity)
     {
         var attr = entity.getAttribute(AttributeRegistry.MENTAL_RECOVERY.get());
         return attr != null ? (float) attr.getValue() : 0.0f;
@@ -347,9 +311,9 @@ public class SanityCentralHandler
      * 处理理智归零死亡
      * @return true 如果玩家已死亡
      */
-    private boolean handleDeath(Player player, float sanPercent)
+    private static boolean handleDeath(Player player, float sanPercent)
     {
-        if (sanPercent <= DEATH_THRESHOLD)
+        if (sanPercent <= 0.0f)
         {
             player.hurt(player.damageSources().magic(), Float.MAX_VALUE);
             return true;

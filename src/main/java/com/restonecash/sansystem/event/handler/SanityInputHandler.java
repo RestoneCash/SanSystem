@@ -16,7 +16,7 @@ public class SanityInputHandler
 {
 
     @SubscribeEvent
-    public void onMovementInputUpdate(MovementInputUpdateEvent event)
+    public static void onMovementInputUpdate(MovementInputUpdateEvent event)
     {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
@@ -30,13 +30,13 @@ public class SanityInputHandler
         });
     }
 
-    private void invertMovementInput(MovementInputUpdateEvent event)
+    private static void invertMovementInput(MovementInputUpdateEvent event)
     {
         event.getInput().forwardImpulse *= -1;
         event.getInput().leftImpulse *= -1;
     }
 
-    private void addConfusionIndicator(LocalPlayer player)
+    private static void addConfusionIndicator(LocalPlayer player)
     {
         if (!player.hasEffect(MobEffects.DIG_SLOWDOWN))
         {

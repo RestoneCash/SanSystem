@@ -45,18 +45,19 @@ public class ClientConfig
 
     public static final ForgeConfigSpec SPEC = BUILDER.build();
 
-    private static int sanBarX;
-    private static int sanBarY;
-    private static int sanBarWidth;
-    private static int sanBarHeight;
-    private static boolean showSanBar;
-    private static boolean showSanText;
-    private static double warningThreshold;
-    private static double dangerThreshold;
+    private static int sanBarX = 10;
+    private static int sanBarY = 30;
+    private static int sanBarWidth = 100;
+    private static int sanBarHeight = 8;
+    private static boolean showSanBar = true;
+    private static boolean showSanText = true;
+    private static double warningThreshold = 0.3;
+    private static double dangerThreshold = 0.1;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
     {
+        if (event.getConfig().getSpec() != SPEC) return;
         load();
     }
 

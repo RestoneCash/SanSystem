@@ -1,6 +1,8 @@
 package com.restonecash.sansystem.capability;
 
 import com.restonecash.sansystem.api.san.SanityEffects;
+import com.restonecash.sansystem.api.san.SanityTracker;
+import com.restonecash.sansystem.config.ServerConfig;
 
 /**
  * 理智效果状态实现
@@ -8,21 +10,22 @@ import com.restonecash.sansystem.api.san.SanityEffects;
  */
 public class SanityEffectsImpl implements SanityEffects
 {
-    // ==================== 效果强度字段 ====================
-
     private float nauseaIntensity = 0.0f;
     private float blindnessIntensity = 0.0f;
     private boolean inputInverted = false;
     private int slownessStacks = 0;
     private long lastSlownessDecayTick = 0L;
 
-    // ==================== 宽限期计时器字段 ====================
-
     private long gracePeriodStartNausea = 0L;
     private long gracePeriodStartBlindness = 0L;
     private long gracePeriodStartInput = 0L;
 
-    // ==================== 效果强度实现 ====================
+    private final SanityTracker tracker;
+
+    public SanityEffectsImpl(SanityTracker tracker)
+    {
+        this.tracker = tracker;
+    }
 
     @Override
     public float getNauseaIntensity()
@@ -33,7 +36,9 @@ public class SanityEffectsImpl implements SanityEffects
     @Override
     public void setNauseaIntensity(float value)
     {
+        float old = this.nauseaIntensity;
         this.nauseaIntensity = Math.max(0.0f, Math.min(value, 1.0f));
+        if (old != this.nauseaIntensity) this.tracker.markChanged();
     }
 
     @Override
@@ -45,10 +50,10 @@ public class SanityEffectsImpl implements SanityEffects
     @Override
     public void setBlindnessIntensity(float value)
     {
+        float old = this.blindnessIntensity;
         this.blindnessIntensity = Math.max(0.0f, Math.min(value, 1.0f));
+        if (old != this.blindnessIntensity) this.tracker.markChanged();
     }
-
-    // ==================== 输入反转实现 ====================
 
     @Override
     public boolean getInputInverted()
@@ -59,10 +64,11 @@ public class SanityEffectsImpl implements SanityEffects
     @Override
     public void setInputInverted(boolean inverted)
     {
-        this.inputInverted = inverted;
+        if (this.inputInverted != inverted) {
+            this.inputInverted = inverted;
+            this.tracker.markChanged();
+        }
     }
-
-    // ==================== 缓慢层数实现 ====================
 
     @Override
     public int getSlownessStacks()
@@ -73,7 +79,9 @@ public class SanityEffectsImpl implements SanityEffects
     @Override
     public void setSlownessStacks(int stacks)
     {
+        int old = this.slownessStacks;
         this.slownessStacks = Math.max(0, Math.min(stacks, 5));
+        if (old != this.slownessStacks) this.tracker.markChanged();
     }
 
     @Override
@@ -87,8 +95,6 @@ public class SanityEffectsImpl implements SanityEffects
     {
         this.lastSlownessDecayTick = tick;
     }
-
-    // ==================== 宽限期计时器实现 ====================
 
     @Override
     public long getGracePeriodStartNausea()
@@ -130,10 +136,8 @@ public class SanityEffectsImpl implements SanityEffects
     public boolean isInGracePeriod(long gracePeriodStart, long currentTick)
     {
         if (gracePeriodStart <= 0) return false;
-        return (currentTick - gracePeriodStart) < 100;
+        return (currentTick - gracePeriodStart) < ServerConfig.gracePeriodTicks;
     }
-
-    // ==================== 状态重置实现 ====================
 
     @Override
     public void resetRuntimeState()

@@ -16,36 +16,36 @@ public class SanityCapabilityLogicTest
     {
         SanityCapability.register();
         sanity = new SanityCapability();
-        sanity.setMaxSanity(100.0f);
-        sanity.setSanity(100.0f);
+        sanity.getCore().setMaxSanity(100.0f);
+        sanity.getCore().setSanity(100.0f);
     }
 
     @Test
     void testSanPercentCalculation()
     {
-        sanity.setSanity(50.0f);
-        assertEquals(0.5f, sanity.getSanity() / sanity.getMaxSanity(), 0.001f);
+        sanity.getCore().setSanity(50.0f);
+        assertEquals(0.5f, sanity.getCore().getSanity() / sanity.getCore().getMaxSanity(), 0.001f);
 
-        sanity.setSanity(25.0f);
-        assertEquals(0.25f, sanity.getSanity() / sanity.getMaxSanity(), 0.001f);
+        sanity.getCore().setSanity(25.0f);
+        assertEquals(0.25f, sanity.getCore().getSanity() / sanity.getCore().getMaxSanity(), 0.001f);
 
-        sanity.setSanity(10.0f);
-        assertEquals(0.10f, sanity.getSanity() / sanity.getMaxSanity(), 0.001f);
+        sanity.getCore().setSanity(10.0f);
+        assertEquals(0.10f, sanity.getCore().getSanity() / sanity.getCore().getMaxSanity(), 0.001f);
     }
 
     @Test
     void testZeroSanityTriggersDeath()
     {
-        sanity.setSanity(0.0f);
-        assertEquals(0.0f, sanity.getSanity(), 0.001f);
+        sanity.getCore().setSanity(0.0f);
+        assertEquals(0.0f, sanity.getCore().getSanity(), 0.001f);
     }
 
     @Test
     void testNegativeSanityClampedToZero()
     {
-        sanity.setSanity(10.0f);
-        sanity.decreaseSanity(100.0f, 20.0f, 0.0f);
-        assertEquals(0.0f, sanity.getSanity(), 0.001f);
+        sanity.getCore().setSanity(10.0f);
+        sanity.getCore().decreaseSanity(100.0f, 20.0f, 0.0f);
+        assertEquals(0.0f, sanity.getCore().getSanity(), 0.001f);
     }
 
     @Test
@@ -55,8 +55,8 @@ public class SanityCapabilityLogicTest
 
         for (float value : testValues)
         {
-            sanity.setSanity(value * 100.0f);
-            float percent = sanity.getSanity() / sanity.getMaxSanity();
+            sanity.getCore().setSanity(value * 100.0f);
+            float percent = sanity.getCore().getSanity() / sanity.getCore().getMaxSanity();
             assertTrue(percent >= 0 && percent <= 1, "San percent should be between 0 and 1");
         }
     }
@@ -64,25 +64,25 @@ public class SanityCapabilityLogicTest
     @Test
     void testGracePeriodLogic()
     {
-        sanity.setSanity(20.0f);
-        float percentBefore = sanity.getSanity() / sanity.getMaxSanity();
+        sanity.getCore().setSanity(20.0f);
+        float percentBefore = sanity.getCore().getSanity() / sanity.getCore().getMaxSanity();
         assertTrue(percentBefore < 0.25f, "Should be below nausea threshold");
 
-        sanity.addSanity(10.0f);
-        float percentAfter = sanity.getSanity() / sanity.getMaxSanity();
+        sanity.getCore().addSanity(10.0f);
+        float percentAfter = sanity.getCore().getSanity() / sanity.getCore().getMaxSanity();
         assertTrue(percentAfter >= 0.25f, "Should be above nausea threshold after recovery");
     }
 
     @Test
     void testSanityRecoveryOverTime()
     {
-        sanity.setSanity(80.0f);
+        sanity.getCore().setSanity(80.0f);
 
         for (int i = 0; i < 100; i++)
         {
-            sanity.tickRecovery(1.0f);
+            sanity.getCore().tickRecovery(1.0f);
         }
 
-        assertEquals(100.0f, sanity.getSanity(), 0.1f);
+        assertEquals(100.0f, sanity.getCore().getSanity(), 0.1f);
     }
 }

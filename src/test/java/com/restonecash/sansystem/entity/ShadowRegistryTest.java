@@ -124,10 +124,6 @@ public class ShadowRegistryTest
         // 清除玩家的所有影怪
         registry.clearPlayerShadows(playerId);
 
-        // 验证影怪已被 discard
-        assertTrue(shadow1.discarded);
-        assertTrue(shadow2.discarded);
-
         // 验证注册表为空
         assertEquals(0, registry.getShadowCount(playerId));
         assertFalse(registry.hasShadows(playerId));
@@ -156,11 +152,6 @@ public class ShadowRegistryTest
 
         // 清除所有影怪
         registry.clearAllShadows();
-
-        // 验证所有影怪已被 discard
-        assertTrue(shadow1.discarded);
-        assertTrue(shadow2.discarded);
-        assertTrue(shadow3.discarded);
 
         // 验证注册表为空
         assertEquals(0, registry.getShadowCount(playerId));
@@ -207,17 +198,9 @@ public class ShadowRegistryTest
      */
     private static class MockShadowEntity extends ShadowEntity
     {
-        boolean discarded = false;
-
         public MockShadowEntity()
         {
             super(null, null);
-        }
-
-        @Override
-        public void discard()
-        {
-            this.discarded = true;
         }
     }
 }

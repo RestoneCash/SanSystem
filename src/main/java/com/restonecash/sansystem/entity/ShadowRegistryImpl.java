@@ -24,13 +24,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ShadowRegistryImpl implements ShadowRegistry
 {
     // ==================== 单例实例 ====================
-    private static final ShadowRegistryImpl INSTANCE = new ShadowRegistryImpl();
+    private static volatile ShadowRegistryImpl INSTANCE;
 
-    /**
-     * 获取单例实例
-     */
     public static ShadowRegistryImpl getInstance()
     {
+        if (INSTANCE == null) {
+            synchronized (ShadowRegistryImpl.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new ShadowRegistryImpl();
+                }
+            }
+        }
         return INSTANCE;
     }
 

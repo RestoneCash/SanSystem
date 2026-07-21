@@ -41,7 +41,7 @@ public class SanityItemHandler
      * 检测玩家主手和副手物品，判断是否触发理智流失
      */
     @SubscribeEvent
-    public void onLivingTick(LivingEvent.LivingTickEvent event)
+    public static void onLivingTick(LivingEvent.LivingTickEvent event)
     {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
@@ -61,7 +61,7 @@ public class SanityItemHandler
      * 清理该玩家的冷却记录，避免内存泄漏
      */
     @SubscribeEvent
-    public void onPlayerLeave(EntityLeaveLevelEvent event)
+    public static void onPlayerLeave(EntityLeaveLevelEvent event)
     {
         if (!(event.getEntity() instanceof Player player)) return;
         drainTracker.removePlayer(player.getUUID());
@@ -71,7 +71,7 @@ public class SanityItemHandler
      * 检查单个物品的理智流失
      * 检测物品配置，调用跟踪器判断是否执行流失
      */
-    private void checkItemDrain(Player player, ItemStack stack, UUID playerId, long currentTick)
+    private static void checkItemDrain(Player player, ItemStack stack, UUID playerId, long currentTick)
     {
         if (stack.isEmpty()) return;
 

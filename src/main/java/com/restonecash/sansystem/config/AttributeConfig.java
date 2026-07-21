@@ -1,6 +1,5 @@
 package com.restonecash.sansystem.config;
 
-import com.restonecash.sansystem.api.config.DefaultConfig;
 import com.restonecash.sansystem.util.EntityCategory;
 import com.restonecash.sansystem.util.EntityClassificationHelper;
 import net.minecraft.world.entity.EntityType;
@@ -10,7 +9,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AttributeConfig
 {
@@ -95,12 +94,11 @@ public class AttributeConfig
     public final ForgeConfigSpec.DoubleValue otherMaxSan;
     public final ForgeConfigSpec.BooleanValue otherIfSanKill;
 
-    //覆盖配置
-    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overridePollution;
-    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMentalRecover;
-    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMentalResilience;
-    public final ForgeConfigSpec.ConfigValue<Map<String, Double>> overrideMaxSan;
-    public final ForgeConfigSpec.ConfigValue<Map<String, Boolean>> overrideIfSanKill;
+    private final Map<String, Double> overridePollution = new HashMap<>();
+    private final Map<String, Double> overrideMentalRecover = new HashMap<>();
+    private final Map<String, Double> overrideMentalResilience = new HashMap<>();
+    private final Map<String, Double> overrideMaxSan = new HashMap<>();
+    private final Map<String, Boolean> overrideIfSanKill = new HashMap<>();
 
 
 
@@ -279,26 +277,6 @@ public class AttributeConfig
                 .define("otherIfSanKill", false);
 
         builder.pop();
-
-
-        builder.push("entity_overrides");
-
-        overridePollution = builder
-                .comment("覆盖指定实体的污染值", "格式: \"注册名\": 数值")
-                .define("pollution", new HashMap<>());
-        overrideMentalRecover = builder
-                .comment("覆盖指定实体的精神恢复")
-                .define("mentalRecover", new HashMap<>());
-        overrideMentalResilience = builder
-                .comment("覆盖指定实体的精神韧性")
-                .define("mentalResilience", new HashMap<>());
-        overrideMaxSan = builder
-                .comment("覆盖指定实体的最大SAN值")
-                .define("maxSan", new HashMap<>());
-        overrideIfSanKill = builder
-                .comment("覆盖指定实体的SAN归零是否死亡")
-                .define("ifSanKill", new HashMap<>());
-        builder.pop();
     }
 
     /**
@@ -326,20 +304,24 @@ public class AttributeConfig
      * @param type
      * @return
      */
+    private final Map<String, AttributeValues> attributesCache = new ConcurrentHashMap<>();
+
     public AttributeValues getAttributes(EntityType<?> type) {
-        // 获取实体注册名
         String key = ForgeRegistries.ENTITY_TYPES.getKey(type).toString();
+        return attributesCache.computeIfAbsent(key, k -> {
+            double pollution = getOverrideOrFallback(k, overridePollution, getCategoryPollution(type));
+            double mentalRecover = getOverrideOrFallback(k, overrideMentalRecover, getCategoryMentalRecover(type));
+            double mentalResilience = getOverrideOrFallback(k, overrideMentalResilience, getCategoryMentalResilience(type));
+            double maxSan = getOverrideOrFallback(k, overrideMaxSan, getCategoryMaxSan(type));
+            boolean ifSanKill = overrideIfSanKill.containsKey(k)
+                    ? overrideIfSanKill.get(k)
+                    : getCategoryIfSanKill(type);
+            return new AttributeValues(pollution, mentalRecover, mentalResilience, maxSan, ifSanKill);
+        });
+    }
 
-        // 先尝试从覆盖 Map 中取值，若没有则使用分类默认值
-        double pollution = getOverrideOrFallback(key, overridePollution.get(), getCategoryPollution(type));
-        double mentalRecover = getOverrideOrFallback(key, overrideMentalRecover.get(), getCategoryMentalRecover(type));
-        double mentalResilience = getOverrideOrFallback(key, overrideMentalResilience.get(), getCategoryMentalResilience(type));
-        double maxSan = getOverrideOrFallback(key, overrideMaxSan.get(), getCategoryMaxSan(type));
-        boolean ifSanKill = overrideIfSanKill.get().containsKey(key)
-                ? overrideIfSanKill.get().get(key)
-                : getCategoryIfSanKill(type);
-
-        return new AttributeValues(pollution, mentalRecover, mentalResilience, maxSan, ifSanKill);
+    public void clearCache() {
+        attributesCache.clear();
     }
 
     // 辅助方法：从覆盖Map取值，若无则返回默认值

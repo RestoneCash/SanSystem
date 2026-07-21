@@ -60,8 +60,7 @@ public class SanityDrainTracker
     public boolean tryDrain(UUID playerId, String sourceId, long currentTick,
                             long cooldownTicks, float drainAmount)
     {
-        // 参数校验
-        if (playerId == null || sourceId == null || sourceId.trim().isEmpty())
+        if (playerId == null || sourceId == null || sourceId.trim().isEmpty() || cooldownTicks <= 0)
         {
             return false;
         }
