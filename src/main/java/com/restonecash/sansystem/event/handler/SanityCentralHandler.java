@@ -92,10 +92,6 @@ public class SanityCentralHandler
             // 处理缓慢效果
             handleSlowness(player, sanity, currentTick);
 
-            // 处理输入反转
-            // 委托给 effectManager 处理
-            handleInputInversion(player, sanPercent, sanity, currentTick);
-
             // 处理影子生成
             handleShadowSpawn(player, sanPercent, currentTick);
 
@@ -122,29 +118,6 @@ public class SanityCentralHandler
         effectManager.update(player, currentTick);
     }
 
-    /**
-     * 计算宽限期内的渐变强度
-     * @return 0.0 ~ 1.0 之间的强度值
-     * 【保留说明】此方法仍被 handleSlowness 使用，暂不删除
-     */
-    private static float calculateFadeIntensity(long gracePeriodStart, long currentTick)
-    {
-        if (gracePeriodStart <= 0)
-        {
-            return 1.0f;
-        }
-
-        long ticksSinceGraceStart = currentTick - gracePeriodStart;
-
-        if (ticksSinceGraceStart < ServerConfig.gracePeriodTicks)
-        {
-            return 1.0f - (float) ticksSinceGraceStart / ServerConfig.gracePeriodTicks;
-        }
-        else
-        {
-            return 0.0f;
-        }
-    }
 
     // ==================== 子系统：缓慢效果 ====================
 
@@ -185,18 +158,6 @@ public class SanityCentralHandler
     }
 
     // ==================== 子系统：输入反转 ====================
-
-    /**
-     * 处理输入反转状态
-     * 【委托说明】具体逻辑已下沉到 effectManager.update()
-     * 包括：阈值检测、状态切换、宽限期渐变、同步到 Capability
-     */
-    private static void handleInputInversion(Player player, float sanPercent, ISanity sanity, long currentTick)
-    {
-        // 调用效果管理器更新输入反转效果
-        // effectManager.update() 已包含所有效果的处理，此处无需额外调用
-        // 保留此方法签名以保持代码结构一致，实际逻辑已在 effectManager 中
-    }
 
     /**
      * 公共静态方法：检查玩家是否应该反转输入
