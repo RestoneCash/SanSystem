@@ -25,12 +25,6 @@ import java.util.Map;
  * - 每个玩家的效果状态必须独立
  * - Capability 已经是状态的权威来源（SanityEffects）
  * - 避免状态重复存储和同步问题
- *
- * 新增效果类型：
- * 1. 在 EffectType 中添加枚举值
- * 2. 在 SanityEffects 中添加对应状态字段
- * 3. 创建对应的 EffectApplier 实现
- * 4. 在构造函数中注册
  */
 public class EffectManager
 {
@@ -140,46 +134,47 @@ public class EffectManager
      * @param currentTick 当前游戏 tick
      */
     private void updateEffect(Player player, EffectType type, float sanityPercent,
-                              ISanity sanity, long currentTick)
-    {
-        EffectApplier applier = effectAppliers.get(type);
-        if (applier == null) return;
+                          ISanity sanity, long currentTick) {
+    EffectApplier applier = effectAppliers.get(type);
+    if (applier == null) return;
 
-        // 使用配置的阈值（而非枚举默认值）
-        float threshold = thresholds.getOrDefault(type, type.getThreshold());
-        boolean shouldApply = sanityPercent < threshold;
+    float threshold = thresholds.getOrDefault(type, type.getThreshold());
+    boolean shouldApply = sanityPercent < threshold;
 
-        if (shouldApply)
-        {
-            float intensity = (threshold - sanityPercent) / threshold;
-            intensity = Math.max(0.0f, Math.min(intensity, 1.0f));
+    if (shouldApply) {
+        // 激活效果：重置宽限期，更新强度
+        float intensity = Math.max(0.0f, Math.min((threshold - sanityPercent) / threshold, 1.0f));
+        setEffectIntensity(type, sanity, intensity);
+        setGracePeriodStart(type, sanity, 0L);
+        applier.apply(player, intensity);
+    } 
+    else {
+        // 当前 San >= 阈值，检查是否处于消退期
+        long graceStart = getGracePeriodStart(type, sanity);
+        float currentIntensity = getEffectIntensity(type, sanity); // 从 Capability 读取
 
-            setEffectIntensity(type, sanity, intensity);
-            setGracePeriodStart(type, sanity, 0L);
-            applier.apply(player, intensity);
+        // 情况1：效果尚在活跃（强度>0）但尚未开始宽限期 → 启动宽限期
+        if (currentIntensity > 0.0f && graceStart == 0L) {
+            setGracePeriodStart(type, sanity, currentTick);
+            graceStart = currentTick;
         }
-        else
-        {
-            long gracePeriodStart = getGracePeriodStart(type, sanity);
-            if (gracePeriodStart == 0)
-            {
-                return;
-            }
 
-            float fadeIntensity = calculateFadeIntensity(gracePeriodStart, currentTick);
+        // 情况2：已在宽限期中 → 正常渐隐
+        if (graceStart > 0L) {
+            float fadeIntensity = calculateFadeIntensity(graceStart, currentTick);
             setEffectIntensity(type, sanity, fadeIntensity);
 
-            if (fadeIntensity <= 0.0f)
-            {
+            if (fadeIntensity <= 0.0f) {
                 applier.remove(player);
-                resetEffectState(type, sanity);
-            }
-            else
-            {
+                resetEffectState(type, sanity); // 清除强度并置 graceStart=0
+            } 
+            else {
                 applier.apply(player, fadeIntensity);
             }
         }
+        // 情况3：无效果且无宽限期（完全消退） → 不做任何事
     }
+}
 
     // ==================== 状态读写辅助方法 ====================
     // 这些方法将 EffectType 映射到 Capability 中的对应字段
